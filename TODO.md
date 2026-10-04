@@ -9,17 +9,17 @@
       Esc closes; the form stays open for entering several cards in a row.
 - [x] **"Add list" column** at the end of the board (`add-list-column.tsx`),
       alongside the toolbar button. Stays open to add several lists in a row.
-- [ ] **Choose list color at creation.** Waits on color persistence (below).
+- [x] **Choose list color at creation.** Swatch row in both add-list forms; defaults
+      to the next palette color.
 
 ### Colors via the "…" menu
-- [ ] **Card background color.** Add a color swatch row to the card's "…" menu
-      (`card-menu.tsx`).
-- [ ] **List color selector.** List headers only have a delete "×" today; replace it
-      with a "…" menu holding Rename / Color / Delete. Colors currently rotate by
-      index (`LIST_COLORS` in `list.tsx`), so they shift when lists change.
-- [ ] Both need persistence: a `color` column on `lists` and `cards` plus the API
-      fields. Server work is shelved for now; if needed, store colors in
-      `localStorage` keyed by id as a stopgap, then migrate.
+- [x] **Card background color.** Swatch row (with "No color") in the card's "…"
+      menu; agent mode gets a color dropdown.
+- [x] **List color selector.** "…" menu on list headers (`list-menu.tsx`) holding
+      Rename / Color / Delete.
+- [x] Persistence: `color` column on `lists` and `cards` (palette keys from
+      `colors.ts`). The server adds the columns to older databases on the first API
+      request and gives uncolored lists their old rotation color.
 
 ## UI — backlog
 - [ ] **Touch drag and drop.** HTML5 drag events don't work reliably on phones or
