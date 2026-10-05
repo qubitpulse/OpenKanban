@@ -1,8 +1,8 @@
-import type { BoardData } from "./types";
+import type { BoardData, Id } from "./types";
 
 export interface MovePlan {
   board: BoardData;
-  /** Position value to send to POST /api/cards/:id/move */
+  /** Position to give the card in the target list (see Backend.moveCard) */
   position: number;
 }
 
@@ -13,7 +13,7 @@ export interface MovePlan {
  * board mirrors the server's "shift everything at or after it down" logic.
  * Returns null when the move would not change anything.
  */
-export function planMove(board: BoardData, cardId: number, toListId: number, index: number): MovePlan | null {
+export function planMove(board: BoardData, cardId: Id, toListId: Id, index: number): MovePlan | null {
   const from = board.find((l) => l.cards.some((c) => c.id === cardId));
   const to = board.find((l) => l.id === toListId);
   if (!from || !to) return null;
@@ -43,9 +43,9 @@ export function planMove(board: BoardData, cardId: number, toListId: number, ind
  * Index among a list's cards (excluding the dragged one) where a drop at
  * `clientY` would land: before the first card whose midpoint is below it.
  */
-export function dropIndexAt(clientY: number, container: Element, draggedId: number): number {
+export function dropIndexAt(clientY: number, container: Element, draggedId: Id): number {
   const cards = Array.from(container.querySelectorAll<HTMLElement>("[data-card-id]")).filter(
-    (el) => Number(el.dataset.cardId) !== draggedId,
+    (el) => el.dataset.cardId !== String(draggedId),
   );
   const i = cards.findIndex((el) => {
     const r = el.getBoundingClientRect();

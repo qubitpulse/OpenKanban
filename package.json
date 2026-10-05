@@ -7,12 +7,16 @@
     "dev": "wrangler d1 execute open-kanban-db --local --file=src/server/schema.sql && concurrently -n ui,api -c cyan,green \"vite\" \"wrangler dev --port 8787\"",
     "build": "vite build",
     "seed": "wrangler d1 execute open-kanban-db --local --file=src/server/schema.sql && wrangler d1 execute open-kanban-db --local --command \"DELETE FROM cards; DELETE FROM lists;\" && wrangler d1 execute open-kanban-db --local --file=demo/seed.sql",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:firebase": "vite --mode firebase",
+    "build:firebase": "vite build --mode firebase",
+    "deploy": "pnpm run build:firebase && npx -y firebase-tools deploy --only hosting,firestore"
   },
   "dependencies": {
     "@clawnify/app": "^0.1.0",
     "@clawnify/db": "^0.4.1",
     "@hono/zod-openapi": "^0.18.0",
+    "firebase": "^12.19.0",
     "hono": "^4.6.0",
     "lucide-preact": "^0.575.0",
     "preact": "^10.25.0",

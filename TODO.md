@@ -30,7 +30,12 @@
 - [ ] **Agent mode:** the Delete button wraps under Move/Edit in 300px cards, and
       list header heights differ between columns.
 
-## Server / hosting (shelved)
-- [ ] Deploy to Cloudflare (assets config, real D1 database, Cloudflare Access).
+## Hosting (Firebase, fork only — keep out of upstream PRs)
+- [x] Firebase Hosting + Firestore + login gate at https://closed-kanban.web.app
+      (`pnpm run deploy`). Firestore rules allow only the board account's UID.
+- [x] Firestore moves are atomic (batched writes).
+- [ ] Per-person accounts if the board is shared more widely (rules: list of UIDs).
+
+## Server (D1 API, local dev / upstream)
 - [ ] Make `moveCard` atomic with `DB.batch()` and close gaps in the source list.
-- [ ] Multi-board support with share links; live updates (polling or Durable Objects).
+- [ ] Multi-board support with share links. (Live updates: done in Firebase mode.)

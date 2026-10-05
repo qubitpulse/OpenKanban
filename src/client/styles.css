@@ -416,6 +416,27 @@ textarea { resize: vertical; min-height: 60px; }
   z-index: 20;
 }
 
+/* Login gate (Firebase mode) */
+.gate {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.gate-form {
+  width: 100%;
+  max-width: 320px;
+  padding: 24px;
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  gap: 8px;
+}
+.gate-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.gate-form .btn { margin-top: 8px; }
+.gate-error { font-size: 13px; color: #dc2626; }
+
 /* Phones: columns nearly fill the screen with a peek of the next one */
 @media (max-width: 600px) {
   :root { --list-width: calc(100vw - 56px); }
@@ -424,4 +445,5 @@ textarea { resize: vertical; min-height: 60px; }
   .board { padding: 16px; gap: 12px; scroll-snap-type: x proximity; scroll-padding: 16px; }
   .list, .add-list-column { scroll-snap-align: start; }
   .add-list-popover { right: 16px; }
+  .toolbar-label { display: none; }
 }

@@ -1,118 +1,107 @@
 import { useState, useCallback, useEffect, useRef } from "preact/hooks";
-import { api } from "../api";
 import { planMove } from "../move";
-import type { BoardData } from "../types";
+import type { BoardData, Id } from "../types";
 import type { ColorKey } from "../colors";
+import type { Backend } from "../backends/types";
 import type { BoardContextValue } from "../context";
 
-export function useBoardState(isAgent: boolean): BoardContextValue {
+export function useBoardState(isAgent: boolean, backend: Backend, signOut?: () => void): BoardContextValue {
   const [board, setBoard] = useState<BoardData>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const boardRef = useRef(board);
   boardRef.current = board;
 
-  const refresh = useCallback(async () => {
-    try {
-      const data = await api<{ lists: BoardData }>("GET", "/api/lists");
-      setBoard(data.lists || []);
-    } catch (err) {
-      setError("Failed to load board: " + (err as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    return backend.subscribe(
+      (next) => {
+        boardRef.current = next;
+        setBoard(next);
+        setLoading(false);
+      },
+      (err) => {
+        setError("Failed to load board: " + err.message);
+        setLoading(false);
+      },
+    );
+  }, [backend]);
 
-  // Creates run one at a time: the server gives a new list or card
-  // max(position) + 1, so several entered in quick succession could otherwise
-  // get the same position.
+  const refresh = useCallback(() => backend.refresh(), [backend]);
+
+  // Creates run one at a time: a new list or card gets max(position) + 1,
+  // so several entered in quick succession could otherwise get the same
+  // position.
   const createQueue = useRef<Promise<unknown>>(Promise.resolve());
-  const enqueueCreate = useCallback((create: () => Promise<unknown>) => {
-    const run = createQueue.current.then(async () => {
-      await create();
-      await refresh();
-    });
+  const enqueueCreate = useCallback((create: () => Promise<void>) => {
+    const run = createQueue.current.then(create);
     createQueue.current = run.catch(() => {});
     return run;
-  }, [refresh]);
+  }, []);
+
+  // Show a change immediately, then sync with the backend (which also
+  // reverts the board if the request fails)
+  const optimistic = useCallback(async (next: BoardData, request: () => Promise<void>) => {
+    boardRef.current = next;
+    setBoard(next);
+    try {
+      await request();
+    } catch (err) {
+      await backend.refresh();
+      throw err;
+    }
+  }, [backend]);
 
   const addList = useCallback(
-    (title: string, color?: ColorKey) => enqueueCreate(() => api("POST", "/api/lists", { title, color })),
-    [enqueueCreate],
+    (title: string, color?: ColorKey) => enqueueCreate(() => backend.addList(title, color)),
+    [backend, enqueueCreate],
   );
 
-  const renameList = useCallback(async (id: number, title: string) => {
-    await api("PUT", `/api/lists/${id}`, { title });
-    await refresh();
-  }, [refresh]);
+  const renameList = useCallback((id: Id, title: string) => backend.updateList(id, { title }), [backend]);
 
-  // Optimistic like moveCard: recolor at once, then sync with the server
-  const setListColor = useCallback(async (id: number, color: ColorKey) => {
-    const next = boardRef.current.map((l) => (l.id === id ? { ...l, color } : l));
-    boardRef.current = next;
-    setBoard(next);
-    try {
-      await api("PUT", `/api/lists/${id}`, { color });
-    } finally {
-      await refresh();
-    }
-  }, [refresh]);
+  const setListColor = useCallback(
+    (id: Id, color: ColorKey) =>
+      optimistic(
+        boardRef.current.map((l) => (l.id === id ? { ...l, color } : l)),
+        () => backend.updateList(id, { color }),
+      ),
+    [backend, optimistic],
+  );
 
-  const deleteList = useCallback(async (id: number) => {
-    await api("DELETE", `/api/lists/${id}`);
-    await refresh();
-  }, [refresh]);
+  const deleteList = useCallback((id: Id) => backend.deleteList(id), [backend]);
 
   const addCard = useCallback(
-    (listId: number, title: string, description?: string) =>
-      enqueueCreate(() => api("POST", "/api/cards", { list_id: listId, title, description: description || "" })),
-    [enqueueCreate],
+    (listId: Id, title: string, description?: string) =>
+      enqueueCreate(() => backend.addCard(listId, title, description || "")),
+    [backend, enqueueCreate],
   );
 
-  const editCard = useCallback(async (cardId: number, title: string, description: string) => {
-    await api("PUT", `/api/cards/${cardId}`, { title, description });
-    await refresh();
-  }, [refresh]);
+  const editCard = useCallback(
+    (cardId: Id, title: string, description: string) => backend.updateCard(cardId, { title, description }),
+    [backend],
+  );
 
-  const setCardColor = useCallback(async (cardId: number, color: ColorKey | null) => {
-    const next = boardRef.current.map((l) => ({
-      ...l,
-      cards: l.cards.map((c) => (c.id === cardId ? { ...c, color } : c)),
-    }));
-    boardRef.current = next;
-    setBoard(next);
-    try {
-      await api("PUT", `/api/cards/${cardId}`, { color });
-    } finally {
-      await refresh();
-    }
-  }, [refresh]);
+  const setCardColor = useCallback(
+    (cardId: Id, color: ColorKey | null) =>
+      optimistic(
+        boardRef.current.map((l) => ({
+          ...l,
+          cards: l.cards.map((c) => (c.id === cardId ? { ...c, color } : c)),
+        })),
+        () => backend.updateCard(cardId, { color }),
+      ),
+    [backend, optimistic],
+  );
 
-  const deleteCard = useCallback(async (cardId: number) => {
-    await api("DELETE", `/api/cards/${cardId}`);
-    await refresh();
-  }, [refresh]);
+  const deleteCard = useCallback((cardId: Id) => backend.deleteCard(cardId), [backend]);
 
-  // Optimistic: show the card in its new place immediately, then sync with
-  // the server (which also reverts the board if the request fails).
-  const moveCard = useCallback(async (cardId: number, targetListId: number, index: number) => {
+  const moveCard = useCallback(async (cardId: Id, targetListId: Id, index: number) => {
     const plan = planMove(boardRef.current, cardId, targetListId, index);
     if (!plan) return;
-    boardRef.current = plan.board;
-    setBoard(plan.board);
-    try {
-      await api("POST", `/api/cards/${cardId}/move`, { target_list_id: targetListId, position: plan.position });
-    } finally {
-      await refresh();
-    }
-  }, [refresh]);
+    await optimistic(plan.board, () => backend.moveCard(cardId, targetListId, plan.position));
+  }, [backend, optimistic]);
 
   return {
-    board, isAgent, loading, error, setError, refresh,
+    board, isAgent, loading, error, setError, refresh, signOut,
     addList, renameList, setListColor, deleteList,
     addCard, editCard, setCardColor, deleteCard, moveCard,
   };

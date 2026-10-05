@@ -5,11 +5,11 @@ import { CardMenu } from "./card-menu";
 import { CardAgentActions } from "./card-agent-actions";
 import { ConfirmBar } from "./confirm-bar";
 import { COLORS, type ColorKey } from "../colors";
-import type { Card as CardType } from "../types";
+import type { Card as CardType, Id } from "../types";
 
 interface CardProps {
   card: CardType;
-  listId: number;
+  listId: Id;
   /** Where to draw the drop indicator while another card is dragged over */
   dropHint?: "before" | "after";
 }

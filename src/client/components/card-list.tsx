@@ -1,6 +1,6 @@
 import { useDrag } from "../hooks/use-drag";
 import { Card } from "./card";
-import type { List } from "../types";
+import type { Id, List } from "../types";
 
 interface CardListProps {
   list: List;
@@ -12,7 +12,7 @@ export function CardList({ list }: CardListProps) {
   // Drop indicator: a line before the card being displaced, or after the last card
   const target = over?.listId === list.id ? over.index : null;
   const others = list.cards.filter((c) => c.id !== dragging?.cardId);
-  const hintFor = (cardId: number): "before" | "after" | undefined => {
+  const hintFor = (cardId: Id): "before" | "after" | undefined => {
     if (target === null) return undefined;
     if (others[target]?.id === cardId) return "before";
     if (target === others.length && others[others.length - 1]?.id === cardId) return "after";

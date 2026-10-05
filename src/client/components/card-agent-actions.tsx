@@ -1,12 +1,12 @@
 import { Pencil, Trash2 } from "lucide-preact";
 import { useBoard } from "../context";
 import { COLOR_KEYS, COLORS, type ColorKey } from "../colors";
-import type { Card } from "../types";
+import type { Card, Id } from "../types";
 import type { JSX } from "preact";
 
 interface CardAgentActionsProps {
   card: Card;
-  listId: number;
+  listId: Id;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -15,11 +15,10 @@ export function CardAgentActions({ card, listId, onEdit, onDelete }: CardAgentAc
   const { board, moveCard, setCardColor, setError } = useBoard();
 
   const handleMove = (e: JSX.TargetedEvent<HTMLSelectElement>) => {
-    const targetListId = parseInt((e.target as HTMLSelectElement).value, 10);
-    if (!targetListId) return;
-    const targetList = board.find((l) => l.id === targetListId);
-    const index = targetList ? targetList.cards.length : 0;
-    moveCard(card.id, targetListId, index).catch((err) =>
+    const value = (e.target as HTMLSelectElement).value;
+    const targetList = board.find((l) => String(l.id) === value);
+    if (!targetList) return;
+    moveCard(card.id, targetList.id, targetList.cards.length).catch((err) =>
       setError("Move failed: " + (err as Error).message),
     );
   };

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "preact/hooks";
-import { Plus } from "lucide-preact";
+import { Plus, LogOut } from "lucide-preact";
 import { useBoard } from "../context";
 import { ColorSwatches } from "./color-swatches";
+import { ImportLocalBoard } from "./import-local-board";
 import { nextListColor, type ColorKey } from "../colors";
 
 export function Toolbar() {
-  const { isAgent, board, addList, setError } = useBoard();
+  const { isAgent, board, addList, setError, signOut } = useBoard();
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   // null: let the server pick the next palette color
@@ -41,6 +42,7 @@ export function Toolbar() {
     <header class="toolbar">
       <h1 class="toolbar-title">Kanban Board</h1>
       <div class="toolbar-right">
+        {import.meta.env.DEV && signOut && <ImportLocalBoard />}
         {!showForm && (
           <button
             class="btn btn-primary"
@@ -88,6 +90,11 @@ export function Toolbar() {
               </div>
             </div>
           </div>
+        )}
+        {signOut && (
+          <button class="btn" onClick={signOut} aria-label="Sign out">
+            <LogOut size={16} /> <span class="toolbar-label">Sign out</span>
+          </button>
         )}
       </div>
     </header>

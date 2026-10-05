@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Only the board's account may read or write. Find a user's UID under
+    // Firebase console → Authentication → Users; signed-out visitors and any
+    // other account get nothing.
+    function isBoardOwner() {
+      return request.auth != null
+        && request.auth.uid == 'Z1f8ee4eSWQpSRkTC6NYrIoNTsy1';
+    }
+
+    match /lists/{listId} {
+      allow read, write: if isBoardOwner();
+    }
+
+    match /cards/{cardId} {
+      allow read, write: if isBoardOwner();
+    }
+
+    // Everything else is denied by default
+  }
+}

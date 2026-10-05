@@ -2,15 +2,15 @@ import { createContext } from "preact";
 import { useState, useCallback, useContext } from "preact/hooks";
 import type { JSX } from "preact";
 import { dropIndexAt } from "../move";
-import type { List } from "../types";
+import type { Id, List } from "../types";
 
 export interface DragSource {
-  cardId: number;
-  fromListId: number;
+  cardId: Id;
+  fromListId: Id;
 }
 
 export interface DropTarget {
-  listId: number;
+  listId: Id;
   /** Index among the list's cards, excluding the dragged card */
   index: number;
 }
@@ -20,7 +20,7 @@ type DragEvent = JSX.TargetedDragEvent<HTMLElement>;
 export interface DragContextValue {
   dragging: DragSource | null;
   over: DropTarget | null;
-  startDrag: (cardId: number, fromListId: number, e: DragEvent) => void;
+  startDrag: (cardId: Id, fromListId: Id, e: DragEvent) => void;
   endDrag: () => void;
   listHandlers: (list: List) => {
     onDragOver: (e: DragEvent) => void;
@@ -34,13 +34,13 @@ export interface DragContextValue {
  * another. The whole list (header, cards, footer) is a drop zone.
  */
 export function useDragState(
-  moveCard: (cardId: number, targetListId: number, index: number) => Promise<void>,
+  moveCard: (cardId: Id, targetListId: Id, index: number) => Promise<void>,
   onError: (msg: string) => void,
 ): DragContextValue {
   const [dragging, setDragging] = useState<DragSource | null>(null);
   const [over, setOver] = useState<DropTarget | null>(null);
 
-  const startDrag = useCallback((cardId: number, fromListId: number, e: DragEvent) => {
+  const startDrag = useCallback((cardId: Id, fromListId: Id, e: DragEvent) => {
     e.dataTransfer!.effectAllowed = "move";
     // Firefox won't start a drag without data
     e.dataTransfer!.setData("text/plain", String(cardId));

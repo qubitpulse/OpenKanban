@@ -1,8 +1,11 @@
 import type { ColorKey } from "./colors";
 
+/** Numeric in D1, a document id string in Firestore */
+export type Id = number | string;
+
 export interface Card {
-  id: number;
-  list_id: number;
+  id: Id;
+  list_id: Id;
   title: string;
   description: string;
   position: number;
@@ -12,7 +15,7 @@ export interface Card {
 }
 
 export interface List {
-  id: number;
+  id: Id;
   title: string;
   position: number;
   color: ColorKey | null;
